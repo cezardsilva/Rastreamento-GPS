@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="icon" href="favicon.ico" type="image/ico">
+    <link rel="shortcut icon" href="favicon.ico">
+    <!-- Opcional: Para Apple/Safari -->
+    <link rel="apple-touch-icon" href="favicon.ico">
+    
+    <title>Rastreamento GPS - CDS Consulting</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+            color: var(--dark);
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+        }
+        
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h3 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .status-panel {
+            background-color: var(--light);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-left: 5px solid var(--secondary);
+        }
+        
+        .status-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+        
+        .status-value {
+            font-size: 1.1em;
+        }
+        
+        .online {
+            color: var(--success);
+        }
+        
+        .offline {
+            color: var(--danger);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+        }
+        
+        #startBtn {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        #startBtn:hover {
+            background-color: #219653;
+            transform: translateY(-2px);
+        }
+        
+        #stopBtn {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        #stopBtn:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background-color: #95a5a6;
+            transform: none;
+            cursor: not-allowed;
+        }
+        
+        .data-panel {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+        
+        .data-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--primary);
+            border-bottom: 2px solid var(--secondary);
+            padding-bottom: 5px;
+        }
+        
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .data-item {
+            margin-bottom: 10px;
+        }
+        
+        .data-label {
+            font-weight: bold;
+            color: #7f8c8d;
+        }
+        
+        .data-value {
+            font-size: 1.1em;
+        }
+        
+        .log-container {
+            margin-top: 30px;
+        }
+        
+        .log-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+        
+        #log {
+            height: 200px;
+            overflow-y: auto;
+            background-color: #2d3436;
+            color: #dfe6e9;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .log-entry {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        
+        .log-time {
+            color: #b2bec3;
+        }
+        
+        .log-success {
+            color: #55efc4;
+        }
+        
+        .log-error {
+            color: #ff7675;
+        }
+        
+        @media (max-width: 600px) {
+            .data-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+        }
+
+        /* Garante que os ícones tenham o mesmo estilo original */
+        .fas {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        /* Animação do spinner (existente no seu código) */
+        .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rastreamento GPS</h1>
+        <h3>v.0.5</h3>
+        
+        <div class="status-panel">
+            <div class="status-title">Status do Rastreamento:</div>
+            <div class="status-value" id="statusText">Pronto para iniciar</div>
+        </div>
+        
+        <div class="button-group">
+            <button id="startBtn">Iniciar Rastreamento</button>
+            <button id="stopBtn" disabled>Parar Rastreamento</button>
+        </div>
+        
+        <div class="data-panel">
+            <div class="data-title">Últimos Dados Enviados</div>
+            <div class="data-grid">
+                <div class="data-item">
+                    <div class="data-label">Dispositivo:</div>
+                    <div class="data-value" id="deviceId">device01</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Latitude:</div>
+                    <div class="data-value" id="latitude">-</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Longitude:</div>
+                    <div class="data-value" id="longitude">-</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Precisão:</div>
+                    <div class="data-value" id="accuracy">-</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Último Envio:</div>
+                    <div class="data-value" id="lastUpdate">-</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Status:</div>
+                    <div class="data-value" id="connectionStatus">offline</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="log-container">
+            <div class="log-title">Log de Atividades</div>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configurações
+        const CONFIG = {
+            SERVER_BASE_URL: 'https://www.cdsconsulting.com.br/gps/app/insert.php',
+            DEVICE_ID: 'device01',
+            UPDATE_INTERVAL: 10000,
+            MAX_RETRIES: 3,
+            get SERVER_URL() {
+                return `${this.SERVER_BASE_URL}?v=${Date.now()}&device=${this.DEVICE_ID}`;
+            }
+        };
+
+        // Elementos da interface
+        const UI = {
+            startBtn: document.getElementById('startBtn'),
+            stopBtn: document.getElementById('stopBtn'),
+            statusText: document.getElementById('statusText'),
+            deviceId: document.getElementById('deviceId'),
+            latitude: document.getElementById('latitude'),
+            longitude: document.getElementById('longitude'),
+            accuracy: document.getElementById('accuracy'),
+            lastUpdate: document.getElementById('lastUpdate'),
+            connectionStatus: document.getElementById('connectionStatus'),
+            log: document.getElementById('log')
+        };
+
+        // Variáveis de estado
+        let watchId = null;
+        let trackingInterval = null;
+        let lastPosition = null;
+        let lastSentTime = 0;
+        let isSending = false;
+
+        // Funções de log
+        function addLog(message, type = 'info') {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `
+                <span class="log-time">[${timeString}]</span>
+                <span class="log-${type}"> ${message}</span>
+            `;
+            UI.log.appendChild(logEntry);
+            UI.log.scrollTop = UI.log.scrollHeight;
+        }
+
+        // Atualiza a interface com os dados
+        function updateUI(position, success = true) {
+            if (position) {
+                UI.latitude.textContent = position.coords.latitude.toFixed(6);
+                UI.longitude.textContent = position.coords.longitude.toFixed(6);
+                UI.accuracy.textContent = `${Math.round(position.coords.accuracy)} metros`;
+                UI.lastUpdate.textContent = new Date().toLocaleTimeString();
+            }
+            
+            UI.connectionStatus.textContent = success ? 'online' : 'offline';
+            UI.connectionStatus.className = success ? 'online' : 'offline';
+        }
+
+        // Envia dados para o servidor
+        async function sendData(position) {
+            const now = Date.now();
+            
+            // Sistema de throttling - garante 10 segundos entre envios
+            if (now - lastSentTime < CONFIG.UPDATE_INTERVAL) {
+                //addLog('⏳ Aguardando intervalo mínimo entre envios', 'info');
+                return;
+            }
+            
+            if (isSending) {
+                addLog('🚫 Envio já em progresso - aguardando', 'info');
+                return;
+            }
+
+            isSending = true;
+            lastSentTime = now;
+
+            const data = {
+                deviceId: CONFIG.DEVICE_ID,
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                status: 'active',
+                timestamp: new Date(position.timestamp).toISOString()
+            };
+
+            let retryCount = 0;
+            let lastError = null;
+
+            while (retryCount < CONFIG.MAX_RETRIES) {
+                try {
+                    const url = `${CONFIG.SERVER_BASE_URL}?v=${Date.now()}`;
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                        cache: 'no-store'
+                    });
+
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    
+                    const result = await response.text();
+                    addLog(`✅ Dados enviados (${retryCount+1}/${CONFIG.MAX_RETRIES}): ${result}`, 'success');
+                    updateUI(position, true);
+                    break;
+                    
+                } catch (error) {
+                    lastError = error;
+                    retryCount++;
+                    
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    const errorMsg = isMobile ? `📱 Mobile Error: ${error.message}` : error.message;
+                    
+                    addLog(`⚠️ Tentativa ${retryCount} falhou: ${errorMsg}`, 'error');
+                    
+                    if (retryCount < CONFIG.MAX_RETRIES) {
+                        await new Promise(resolve => setTimeout(resolve, 2000 * retryCount));
+                    }
+                }
+            }
+            
+            isSending = false;
+            updateUI(position, lastError === null);
+            
+            if (lastError) {
+                addLog(`❌ Falha após ${CONFIG.MAX_RETRIES} tentativas`, 'error');
+                throw lastError;
+            }
+        }
+
+        // Inicia o rastreamento
+        function startTracking() {
+            // Ícone e estado inicial (MANTIDO IGUAL)
+            UI.statusText.innerHTML = '<i class="fas fa-crosshairs"></i> Obtendo localização...';
+            UI.startBtn.disabled = true;
+            UI.startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando...';
+            UI.stopBtn.disabled = false;
+            UI.stopBtn.innerHTML = '<i class="fas fa-stop"></i> Parar Rastreamento';
+            
+            addLog('<i class="fas fa-play-circle"></i> Iniciando rastreamento...');
+
+            // Verificação de suporte (MANTIDO)
+            if (!navigator.geolocation) {
+                UI.statusText.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Geolocalização não suportada';
+                addLog('<i class="fas fa-times-circle"></i> Erro: Geolocalização não suportada', 'error');
+                UI.startBtn.disabled = false;
+                UI.startBtn.innerHTML = '<i class="fas fa-play"></i> Iniciar Rastreamento';
+                return;
+            }
+
+            // Configuração (MANTIDO)
+            const geoOptions = {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0
+            };
+
+            // Obtenção inicial de posição (CORREÇÃO PRINCIPAL)
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    // Ícone de sucesso (MANTIDO)
+                    UI.statusText.innerHTML = '<i class="fas fa-map-marker-alt"></i> Rastreamento ativo';
+                    UI.startBtn.innerHTML = '<i class="fas fa-pause"></i> Rastreando...';
+                    
+                    // Inicia monitoramento contínuo (CORREÇÃO)
+                    watchId = navigator.geolocation.watchPosition(
+                        (pos) => {
+                            handlePosition(pos);
+                            // Ícone de atualização (MANTIDO)
+                            UI.lastUpdate.innerHTML = `<i class="fas fa-sync-alt"></i> ${new Date().toLocaleTimeString()}`;
+                        },
+                        handleError,
+                        geoOptions
+                    );
+
+                    // Intervalo de atualização (MANTIDO)
+                    trackingInterval = setInterval(() => {
+                        navigator.geolocation.getCurrentPosition(
+                            handlePosition,
+                            handleError,
+                            geoOptions
+                        );
+                    }, CONFIG.UPDATE_INTERVAL);
+
+                    // Processa primeira posição
+                    handlePosition(position);
+                },
+                (error) => {
+                    // Ícones de erro (MANTIDOS)
+                    UI.startBtn.innerHTML = '<i class="fas fa-play"></i> Iniciar Rastreamento';
+                    UI.statusText.innerHTML = '<i class="fas fa-exclamation-circle"></i> Erro na localização';
+                    handleError(error);
+                },
+                geoOptions
+            );
+        }
+
+
+        // Para o rastreamento
+        async function stopTracking() {
+            try {
+                // 1. Parar todos os rastreamentos
+                if (watchId) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                    addLog('👋 WatchPosition parado');
+                }
+                
+                if (trackingInterval) {
+                    clearInterval(trackingInterval);
+                    trackingInterval = null;
+                    addLog('⏱️ Intervalo de atualização cancelado');
+                }
+                
+                // 2. Atualizar a interface imediatamente
+                UI.statusText.textContent = 'Rastreamento parado';
+                UI.startBtn.disabled = false;
+                UI.stopBtn.disabled = true;
+                
+                // 3. Enviar status de parada (se houver última posição)
+                if (lastPosition) {
+                    await sendData({
+                        coords: {
+                            latitude: lastPosition.coords.latitude,
+                            longitude: lastPosition.coords.longitude,
+                            accuracy: lastPosition.coords.accuracy
+                        },
+                        timestamp: Date.now(),
+                        status: 'stopped'
+                    });
+                }
+                
+                addLog('🛑 Rastreamento parado com sucesso');
+                
+            } catch (error) {
+                addLog(`⚠️ Erro ao parar rastreamento: ${error.message}`, 'error');
+            } finally {
+                // Garante que os botões voltem ao estado correto mesmo se houver erro
+                UI.startBtn.disabled = false;
+                UI.stopBtn.disabled = true;
+            }
+        }
+
+        // Manipulador de posição
+        function handlePosition(position) {
+            lastPosition = position;
+            UI.statusText.textContent = 'Rastreamento ativo';
+            
+            // Atualiza a interface imediatamente
+            UI.latitude.textContent = position.coords.latitude.toFixed(6);
+            UI.longitude.textContent = position.coords.longitude.toFixed(6);
+            UI.accuracy.textContent = `${Math.round(position.coords.accuracy)} metros`;
+            UI.lastUpdate.textContent = new Date().toLocaleTimeString();
+            
+            // Envia os dados com controle de tempo
+            sendData(position).catch(() => { /* Erros já são tratados em sendData() */ });
+        }
+
+        // Manipulador de erro
+        function handleError(error) {
+            let message = '';
+            switch(error.code) {
+                case 1:
+                    message = '🔒 Permissão negada - Recarregue a página e conceda acesso';
+                    UI.startBtn.disabled = false;
+                    UI.stopBtn.disabled = true;
+                    break;
+                case 2:
+                    message = '📡 Sem sinal GPS - Verifique sua conexão';
+                    break;
+                case 3:
+                    message = '⏱️ Tempo esgotado - Movimente-se para melhor recepção';
+                    break;
+                default:
+                    message = `❌ Erro desconhecido: ${error.message}`;
+            }
+            
+            UI.statusText.textContent = message;
+            addLog(message, 'error');
+            
+            // Tentativa automática de recuperação para erros temporários
+            if (error.code !== 1 && watchId) {
+                setTimeout(() => {
+                    if (watchId) {
+                        navigator.geolocation.getCurrentPosition(
+                            handlePosition,
+                            handleError,
+                            geoOptions
+                        );
+                    }
+                }, 5000);
+            }
+        }
+
+        // Diagnóstico inicial
+        addLog(`🌍 User Agent: ${navigator.userAgent}`);
+        addLog(`🔋 Online: ${navigator.onLine ? 'Sim' : 'Não'}`);
+        addLog(`🛰️ Geolocation: ${'geolocation' in navigator ? 'Disponível' : 'Indisponível'}`);
+
+        // Monitoramento de conexão
+        window.addEventListener('online', () => {
+            addLog('📶 Conexão restabelecida', 'success');
+            if (watchId) {
+                UI.statusText.textContent = 'Reconectado - Rastreando...';
+            }
+        });
+
+        window.addEventListener('offline', () => {
+            addLog('⚠️ Sem conexão com a internet', 'error');
+            if (watchId) {
+                UI.statusText.textContent = 'Sem conexão - Tentando reconectar...';
+            }
+        });
+
+
+        // Event listeners
+        UI.startBtn.addEventListener('click', startTracking);
+        UI.stopBtn.addEventListener('click', stopTracking);
+
+        // Inicialização
+        addLog('Aplicativo iniciado. Aguardando comando...');
+        UI.deviceId.textContent = CONFIG.DEVICE_ID;
+    </script>
+</body>
+</html>

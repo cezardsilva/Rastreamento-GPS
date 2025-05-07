@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Rastreamento de Aparelho - CDS Consulting</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Ícones preservados -->
+    <link rel="icon" href="favicon.ico" type="image/ico">
+    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="apple-touch-icon" href="favicon.ico">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+    <div id="map"></div>
+    <div id="info-panel" class="collapsed">
+        <div id="info-panel-header">
+            <span>Última Posição Registrada</span>
+            <span id="info-panel-toggle">▼</span>
+        </div>
+        <div id="info-panel-content">
+            <p>Dispositivo: <strong>device01</strong></p>
+            <p>Atualizado: <strong><span id="update-time">carregando...</span></strong></p>
+            <p>Precisão: <strong><span id="gps-accuracy">-</span></strong></p>
+            <p>Status: <strong><span id="connection-status" class="status-offline">offline</span></strong></p>
+
+            <div id="distance-panel">
+                <p>Distância percorrida: <strong><span id="total-distance">0</span> km</strong></p>
+            </div>
+
+            <div id="filter-date">
+                <p>Filtro aplicado: <strong><span id="current-filter-date">-</span></strong></p>
+            </div>
+
+            <button id="google-maps-btn">Ver no Google Maps</button>
+
+            <div id="history-controls">
+                <label>Mostrar histórico:</label>
+                <select id="history-select">
+                    <option value="30min">Últimos 30 minutos</option>
+                    <option value="1h">Última 1 hora</option>
+                    <option value="3h">Últimas 3 horas</option>
+                    <option value="today">Dia de hoje</option>
+                    <option value="yesterday">Dia anterior (ontem)</option>
+                    <option value="2_days_before">2 dias antes</option>
+                    <option value="3_days_before">3 dias antes</option>
+                    <option value="4_days_before">4 dias antes</option>
+                    <option value="5_days_before">5 dias antes</option>
+                    <option value="6_days_before">6 dias antes</option>
+                    <option value="7_days_before">7 dias antes</option>
+                    <option value="all">Todo o histórico</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="./script.js"></script>
+    <script>
+        // Revisão do script
+        window.addEventListener("load", function() {
+            console.log("rev 1.0");
+        });
+    </script>
+</body>
+
+</html>
